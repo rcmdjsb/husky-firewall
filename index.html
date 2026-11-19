@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Husky Firewall — Cyberpunk Arcade Defense</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="cabinet">
+    <header class="top-bar">
+      <div class="brand">
+        <svg class="brand-emblem" viewBox="0 0 48 48" width="36" height="36" aria-hidden="true">
+          <defs>
+            <linearGradient id="shieldGrad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#7cc9e8"/>
+              <stop offset="100%" stop-color="#1f7a99"/>
+            </linearGradient>
+          </defs>
+          <!-- Outer cyber shield -->
+          <path d="M24 3 L42 10 V24 C42 35 34 42 24 45 C14 42 6 35 6 24 V10 Z"
+                fill="#061a22" stroke="url(#shieldGrad)" stroke-width="2.5"/>
+          <!-- Geometric husky silhouette inside shield -->
+          <path d="M15 16 L18 24 L15 29 L24 37 L33 29 L30 24 L33 16 L27 21 L24 19 L21 21 Z"
+                fill="none" stroke="#7cc9e8" stroke-width="2" stroke-linejoin="round"/>
+          <!-- Glowing cyber eyes -->
+          <polygon points="18.5,25.5 22,26.5 19.5,28" fill="#7cc9e8"/>
+          <polygon points="29.5,25.5 26,26.5 28.5,28" fill="#7cc9e8"/>
+          <!-- Nose node -->
+          <polygon points="24,31 22.5,33 25.5,33" fill="#1f7a99"/>
+        </svg>
+        <div class="brand-text">
+          <h1>HUSKY FIREWALL</h1>
+          <span class="brand-sub">PERIMETER DEFENSE v2.4</span>
+        </div>
+      </div>
+
+      <div class="top-actions">
+        <button id="btn-pause" class="icon-btn" type="button" aria-label="Pause game" title="Pause (P)" disabled>
+          <svg id="icon-pause" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+            <rect x="6" y="4" width="4" height="16" rx="1" fill="currentColor"/>
+            <rect x="14" y="4" width="4" height="16" rx="1" fill="currentColor"/>
+          </svg>
+          <svg id="icon-play" class="hidden" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+            <polygon points="6,4 20,12 6,20" fill="currentColor"/>
+          </svg>
+          <span class="btn-label">PAUSE</span>
+        </button>
+
+        <button id="btn-mute" class="icon-btn" type="button" aria-label="Toggle sound" aria-pressed="false" title="Mute / Unmute (M)">
+          <svg id="icon-sound-on" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+            <path d="M11 5L6 9H2v6h4l5 4V5z" fill="currentColor"/>
+            <path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <svg id="icon-sound-off" class="hidden" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+            <path d="M11 5L6 9H2v6h4l5 4V5z" fill="currentColor"/>
+            <path d="M22 9l-6 6M16 9l6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <span id="mute-label" class="btn-label">SFX ON</span>
+        </button>
+      </div>
+    </header>
+
+    <section class="hud" aria-label="Game status">
+      <div class="hud-cell">
+        <span class="hud-label">SCORE</span>
+        <div class="hud-value-row">
+          <span id="hud-score" class="hud-value">0</span>
+          <span id="hud-multiplier" class="multiplier-pill" aria-hidden="true">2X</span>
+        </div>
+      </div>
+
+      <div class="hud-cell">
+        <span class="hud-label">WAVE</span>
+        <span id="hud-wave" class="hud-value accent">1</span>
+      </div>
+
+      <div class="hud-cell">
+        <span class="hud-label">STREAK</span>
+        <span id="hud-streak" class="hud-value streak">0x</span>
+      </div>
+
+      <div class="hud-cell">
+        <span class="hud-label">FIREWALL</span>
+        <div id="hud-lives" class="lives-meter" aria-label="3 of 3 firewall lives remaining">
+          <span class="life-pip active"></span>
+          <span class="life-pip active"></span>
+          <span class="life-pip active"></span>
+        </div>
+      </div>
+
+      <div class="hud-cell">
+        <span class="hud-label">HIGH SCORE</span>
+        <span id="hud-highscore" class="hud-value best">0</span>
+      </div>
+    </section>
+
+    <main class="stage-wrap">
+      <canvas id="game-canvas" width="720" height="520" aria-label="Husky Firewall arcade arena"></canvas>
+
+      <!-- Live Overclock Power-Up Status Bar -->
+      <div id="overclock-bar" class="overclock-bar" aria-live="polite">
+        <div class="overclock-header">
+          <span class="overclock-title">⚡ OVERCLOCK ACTIVE · WIDE SHIELD + 2X SCORE</span>
+          <span id="overclock-time" class="overclock-time">8.0s</span>
+        </div>
+        <div class="overclock-track">
+          <div id="overclock-fill" class="overclock-fill"></div>
+        </div>
+      </div>
+
+      <!-- Start Screen Overlay -->
+      <div id="overlay-start" class="overlay active" role="dialog" aria-modal="true" aria-labelledby="start-title">
+        <div class="overlay-card">
+          <div class="overlay-badge">CYBER NETWORK DEFENSE</div>
+          <h2 id="start-title" class="overlay-title">HUSKY FIREWALL</h2>
+          <p class="overlay-subtitle">
+            Intercept clean telemetry packets and deflect incoming malware before your perimeter collapses.
+          </p>
+
+          <div class="legend-grid">
+            <div class="legend-item packet">
+              <span class="legend-icon" aria-hidden="true">◆</span>
+              <div>
+                <strong>Data Packet</strong>
+                <span id="legend-packet-pts">+10 pts &amp; streak</span>
+              </div>
+            </div>
+            <div class="legend-item malware">
+              <span class="legend-icon" aria-hidden="true">✖</span>
+              <div>
+                <strong>Malware Bug</strong>
+                <span>Block (-1 life)</span>
+              </div>
+            </div>
+            <div class="legend-item overclock">
+              <span class="legend-icon" aria-hidden="true">⚡</span>
+              <div>
+                <strong>Overclock</strong>
+                <span>Wide + 2x (8s)</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="difficulty-block">
+            <span id="difficulty-label" class="difficulty-label">SELECT DIFFICULTY</span>
+            <div id="difficulty-selector" class="difficulty-grid" role="radiogroup" aria-labelledby="difficulty-label">
+              <button class="diff-btn" type="button" role="radio" aria-checked="false" data-difficulty="chill">
+                <span class="diff-name">CHILL</span>
+                <span class="diff-meta">0.72x SPD · 1x PTS</span>
+              </button>
+              <button class="diff-btn active" type="button" role="radio" aria-checked="true" data-difficulty="normal">
+                <span class="diff-name">NORMAL</span>
+                <span class="diff-meta">1.0x SPD · 1x PTS</span>
+              </button>
+              <button class="diff-btn" type="button" role="radio" aria-checked="false" data-difficulty="overdrive">
+                <span class="diff-name">OVERDRIVE</span>
+                <span class="diff-meta">1.35x SPD · 2x PTS</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="start-meta">
+            <span>HIGH SCORE: <strong id="start-highscore">0</strong></span>
+            <span>HUSKY QUIZ: <strong>EVERY 30s (+100 / -25)</strong></span>
+          </div>
+
+          <button id="btn-start" class="primary-btn" type="button">
+            INITIALIZE FIREWALL
+          </button>
+          <p class="hint-line">Press <kbd>SPACE</kbd> or <kbd>ENTER</kbd> to deploy</p>
+        </div>
+      </div>
+
+      <!-- Pause Overlay -->
+      <div id="overlay-pause" class="overlay" role="dialog" aria-modal="true" aria-labelledby="pause-title">
+        <div class="overlay-card compact">
+          <div class="overlay-badge">SYSTEM SUSPENDED</div>
+          <h2 id="pause-title" class="overlay-title">PAUSED</h2>
+          <p class="overlay-subtitle">Firewall shields holding position.</p>
+          <div class="overlay-actions">
+            <button id="btn-resume" class="primary-btn" type="button">RESUME DEFENSE</button>
+            <button id="btn-pause-restart" class="secondary-btn" type="button">RESTART</button>
+          </div>
+          <p class="hint-line">Press <kbd>P</kbd> to resume</p>
+        </div>
+      </div>
+
+      <!-- Hosford AI & Digital Citizenship Quiz Overlay -->
+      <div id="overlay-quiz" class="overlay" role="dialog" aria-modal="true" aria-labelledby="quiz-prompt">
+        <div class="overlay-card quiz-card">
+          <div class="quiz-top-row">
+            <span id="quiz-category" class="overlay-badge">HOSFORD AI CHECKPOINT</span>
+            <span class="quiz-stakes">+100 RIGHT · -25 WRONG</span>
+          </div>
+          <h2 id="quiz-prompt" class="quiz-prompt">Question prompt loads here...</h2>
+          <div id="quiz-choices" class="quiz-choices" role="group" aria-label="Answer choices"></div>
+          <div id="quiz-feedback" class="quiz-feedback hidden" aria-live="polite">
+            <strong id="quiz-feedback-title" class="quiz-feedback-title"></strong>
+            <p id="quiz-feedback-text" class="quiz-feedback-text"></p>
+          </div>
+          <button id="btn-quiz-continue" class="primary-btn quiz-continue hidden" type="button">
+            CONTINUE DEFENSE
+          </button>
+          <p id="quiz-hint" class="hint-line">Click an answer or press <kbd>1</kbd>–<kbd>4</kbd></p>
+        </div>
+      </div>
+
+      <!-- Game Over Overlay -->
+      <div id="overlay-gameover" class="overlay" role="dialog" aria-modal="true" aria-labelledby="gameover-title">
+        <div class="overlay-card">
+          <div class="overlay-badge danger">FIREWALL BREACHED</div>
+          <h2 id="gameover-title" class="overlay-title">GAME OVER</h2>
+          <div id="go-new-record" class="new-record hidden">★ NEW HIGH SCORE ★</div>
+
+          <div class="stats-grid">
+            <div class="stat-box">
+              <span class="stat-label">FINAL SCORE</span>
+              <span id="go-score" class="stat-value">0</span>
+            </div>
+            <div class="stat-box">
+              <span class="stat-label">HIGH SCORE</span>
+              <span id="go-highscore" class="stat-value best">0</span>
+            </div>
+            <div class="stat-box">
+              <span class="stat-label">WAVE REACHED</span>
+              <span id="go-wave" class="stat-value">1</span>
+            </div>
+            <div class="stat-box">
+              <span class="stat-label">BEST STREAK</span>
+              <span id="go-best-streak" class="stat-value">0x</span>
+            </div>
+          </div>
+
+          <div id="go-quiz-summary" class="go-quiz-summary hidden"></div>
+
+          <div class="overlay-actions">
+            <button id="btn-play-again" class="primary-btn" type="button">
+              PLAY AGAIN
+            </button>
+            <button id="btn-change-difficulty" class="secondary-btn" type="button">
+              CHANGE DIFFICULTY
+            </button>
+          </div>
+          <p class="hint-line">Press <kbd>SPACE</kbd> or <kbd>ENTER</kbd> to reboot</p>
+        </div>
+      </div>
+    </main>
+
+    <footer class="controls-bar">
+      <span><kbd>←</kbd> <kbd>→</kbd> or <kbd>A</kbd> <kbd>D</kbd> / Mouse &amp; Touch Drag: Move Shield</span>
+      <span><kbd>P</kbd> Pause</span>
+      <span><kbd>M</kbd> Mute SFX</span>
+    </footer>
+  </div>
+
+  <script defer src="audio.js"></script>
+  <script defer src="questions.js"></script>
+  <script defer src="game.js"></script>
+</body>
+</html>
