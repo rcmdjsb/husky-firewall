@@ -10,9 +10,9 @@
   const FIREWALL_Y = 500;
   const PADDLE_Y = 468;
   const PADDLE_HEIGHT = 16;
-  const PADDLE_BASE_WIDTH = 116;
-  const PADDLE_OVERCLOCK_WIDTH = 188;
-  const PADDLE_SPEED = 640;
+  const PADDLE_BASE_WIDTH = 142;
+  const PADDLE_OVERCLOCK_WIDTH = 220;
+  const PADDLE_SPEED = 720;
   const MAX_LIVES = 3;
   const OVERCLOCK_DURATION = 8.0;
   const PACKET_POINTS = 10;
@@ -241,13 +241,13 @@
   }
 
   function getWaveSpeedMultiplier() {
-    const baseWave = Math.min(2.6, 1 + (state.wave - 1) * 0.16);
-    return Math.min(3.1, baseWave * getDifficultyConfig().speedMultiplier);
+    const baseWave = Math.min(2.0, 1 + (state.wave - 1) * 0.09);
+    return Math.min(2.5, baseWave * getDifficultyConfig().speedMultiplier);
   }
 
   function getSpawnInterval() {
-    const baseInterval = Math.max(0.32, 0.9 - (state.wave - 1) * 0.062);
-    return Math.max(0.25, baseInterval * getDifficultyConfig().spawnIntervalMultiplier);
+    const baseInterval = Math.max(0.52, 1.22 - (state.wave - 1) * 0.048);
+    return Math.max(0.42, baseInterval * getDifficultyConfig().spawnIntervalMultiplier);
   }
 
   function setDifficulty(level) {
@@ -569,17 +569,17 @@
 
   function spawnBossGlitch() {
     const speedMult = getWaveSpeedMultiplier();
-    const x = CANVAS_WIDTH * (0.28 + Math.random() * 0.44);
+    const x = CANVAS_WIDTH * (0.32 + Math.random() * 0.36);
     state.entities.push({
       type: "boss_glitch",
       x: x,
       y: -36,
       radius: 28,
-      vy: (122 + Math.random() * 18) * Math.min(1.9, speedMult),
-      vx: (Math.random() < 0.5 ? -1 : 1) * (42 + state.wave * 3),
+      vy: (92 + Math.random() * 14) * Math.min(1.6, speedMult),
+      vx: (Math.random() < 0.5 ? -1 : 1) * (28 + state.wave * 2),
       phase: Math.random() * Math.PI * 2,
       rot: 0,
-      rotSpeed: (Math.random() < 0.5 ? -1 : 1) * 1.4
+      rotSpeed: (Math.random() < 0.5 ? -1 : 1) * 1.2
     });
     triggerWaveBanner("⚠ BOSS GLITCH DETECTED!", COLORS.boss);
   }
@@ -590,13 +590,13 @@
     const configs = [
       {
         dir: -1,
-        vx: -(105 + Math.random() * 35),
-        vy: leftHigher ? -420 : -345
+        vx: -(74 + Math.random() * 24),
+        vy: leftHigher ? -370 : -305
       },
       {
         dir: 1,
-        vx: 105 + Math.random() * 35,
-        vy: leftHigher ? -345 : -420
+        vx: 74 + Math.random() * 24,
+        vy: leftHigher ? -305 : -370
       }
     ];
 
@@ -610,11 +610,11 @@
         radius: 12,
         vx: cfg.vx,
         vy: cfg.vy,
-        gravity: 420,
-        spawnGrace: 0.22,
+        gravity: 300,
+        spawnGrace: 0.24,
         phase: Math.random() * Math.PI * 2,
         rot: 0,
-        rotSpeed: cfg.dir * 4.2
+        rotSpeed: cfg.dir * 3.6
       });
     });
   }
@@ -622,31 +622,37 @@
   // Entity Spawning
   function spawnEntity() {
     const speedMult = getWaveSpeedMultiplier();
-    const margin = 34;
+    const margin = 44;
 
     // Decide whether to spawn an occasional gold Overclock orb
     const hasOverclockOnScreen = state.entities.some(function (e) {
       return e.type === "overclock";
     });
+    const activeMalwareCount = state.entities.filter(function (e) {
+      return e.type === "malware" || e.type === "boss_glitch";
+    }).length;
+    const maxConcurrentMalware = state.wave < 4 ? 2 : 3;
     let type;
 
-    if (!hasOverclockOnScreen && state.powerupCooldown <= 0 && Math.random() < 0.24) {
+    if (!hasOverclockOnScreen && state.powerupCooldown <= 0 && Math.random() < 0.34) {
       type = "overclock";
-      state.powerupCooldown = 13 + Math.random() * 7;
+      state.powerupCooldown = 9.5 + Math.random() * 4.5;
+    } else if (activeMalwareCount >= maxConcurrentMalware) {
+      type = "packet";
     } else {
-      // Slightly increase malware proportion at higher waves while keeping ample packets
-      const malwareChance = Math.min(0.54, 0.43 + (state.wave - 1) * 0.015);
+      // Gentle malware proportion that ramps gradually with waves
+      const malwareChance = Math.min(0.45, 0.33 + (state.wave - 1) * 0.012);
       type = Math.random() < malwareChance ? "malware" : "packet";
     }
 
     let x = margin + Math.random() * (CANVAS_WIDTH - margin * 2);
 
-    // Prevent unfair simultaneous opposite-edge malware spawns
+    // Keep consecutive malware spawns within comfortable reach of the shield
     if (type === "malware") {
-      const maxDelta = 340;
+      const maxDelta = 225;
       if (Math.abs(x - state.lastMalwareX) > maxDelta) {
         const dir = x > state.lastMalwareX ? 1 : -1;
-        x = Math.max(margin, Math.min(CANVAS_WIDTH - margin, state.lastMalwareX + dir * (160 + Math.random() * 170)));
+        x = Math.max(margin, Math.min(CANVAS_WIDTH - margin, state.lastMalwareX + dir * (90 + Math.random() * 130)));
       }
       state.lastMalwareX = x;
     }
@@ -656,9 +662,9 @@
         type: "packet",
         x: x,
         y: -22,
-        radius: 16,
-        vy: (165 + Math.random() * 55) * speedMult,
-        vx: (Math.random() - 0.5) * 18,
+        radius: 17,
+        vy: (118 + Math.random() * 34) * speedMult,
+        vx: (Math.random() - 0.5) * 10,
         phase: Math.random() * Math.PI * 2
       });
     } else if (type === "malware") {
@@ -667,19 +673,19 @@
         x: x,
         y: -24,
         radius: 17,
-        vy: (185 + Math.random() * 60) * speedMult,
-        vx: (Math.random() - 0.5) * (24 + state.wave * 4),
+        vy: (126 + Math.random() * 38) * speedMult,
+        vx: (Math.random() - 0.5) * (14 + state.wave * 2),
         phase: Math.random() * Math.PI * 2,
         rot: 0,
-        rotSpeed: (Math.random() < 0.5 ? -1 : 1) * (1.8 + Math.random() * 1.4)
+        rotSpeed: (Math.random() < 0.5 ? -1 : 1) * (1.5 + Math.random() * 1.1)
       });
     } else {
       state.entities.push({
         type: "overclock",
         x: x,
         y: -22,
-        radius: 15,
-        vy: (155 + Math.random() * 35) * Math.min(1.8, speedMult),
+        radius: 16,
+        vy: (110 + Math.random() * 24) * Math.min(1.5, speedMult),
         vx: 0,
         phase: Math.random() * Math.PI * 2
       });
@@ -881,11 +887,11 @@
       state.spawnTimer = baseInterval * (0.78 + Math.random() * 0.44);
     }
 
-    // Paddle bounding box for collision checks
-    const pLeft = state.paddle.x - halfW;
-    const pRight = state.paddle.x + halfW;
-    const pTop = PADDLE_Y - PADDLE_HEIGHT / 2;
-    const pBottom = PADDLE_Y + PADDLE_HEIGHT / 2;
+    // Paddle bounding box for collision checks (with slight forgiving edge grace)
+    const pLeft = state.paddle.x - halfW - 5;
+    const pRight = state.paddle.x + halfW + 5;
+    const pTop = PADDLE_Y - PADDLE_HEIGHT / 2 - 3;
+    const pBottom = PADDLE_Y + PADDLE_HEIGHT / 2 + 2;
 
     // Update Entities
     for (let i = state.entities.length - 1; i >= 0; i--) {
